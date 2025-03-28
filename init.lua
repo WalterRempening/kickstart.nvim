@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -102,7 +102,7 @@ vim.g.have_nerd_font = false
 vim.opt.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.opt.relativenumber = true
+vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -174,11 +174,11 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
--- TIP: Disable arrow keys in normal mode
--- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
--- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
--- vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
--- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
+-- NOTE: Disable arrow keys in normal mode
+vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
+vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
+vim.keymap.set('n', '<up>', '<cmd>echo "Use k to move!!"<CR>')
+vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
 -- Keybinds to make split navigation easier.
 --  Use CTRL+<hjkl> to switch between windows
@@ -189,8 +189,12 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+-- Oil
+vim.keymap.set('n', '-', '<cmd>Oil<CR>', { desc = 'Open [O]il' })
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
+
+vim.g.netrw_banner = 0
 
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
@@ -646,6 +650,7 @@ require('lazy').setup({
       --  When you add nvim-cmp, luasnip, etc. Neovim now has *more* capabilities.
       --  So, we create new capabilities with nvim cmp, and then broadcast that to the servers.
       local capabilities = vim.lsp.protocol.make_client_capabilities()
+      local lspconfig = require 'lspconfig'
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
       -- Enable the following language servers
@@ -670,7 +675,9 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
-
+        kotlin_language_server = {
+          filetypes = { 'kotlin', 'kt', 'kts' },
+        },
         lua_ls = {
           -- cmd = { ... },
           -- filetypes = { ... },
@@ -720,9 +727,18 @@ require('lazy').setup({
           end,
         },
       }
+
+      lspconfig.sourcekit.setup {
+        capabilities = {
+          workspace = {
+            didChangeWatchedFiles = {
+              dynamicRegistration = true,
+            },
+          },
+        },
+      }
     end,
   },
-
   { -- Autoformat
     'stevearc/conform.nvim',
     event = { 'BufWritePre' },
@@ -757,6 +773,17 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
+        csharp = { 'csharpier' },
+        vue = { 'prettier' },
+        javascript = { 'prettier' },
+        typescript = { 'prettier' },
+        html = { 'html_beautify' },
+        dart = { 'dart_format' },
+        xml = { 'xmllint' },
+        sql = { 'pg_format' },
+        json = { 'fixjson' },
+        typescriptreact = { 'prettier' },
+        markdown = { 'prettier' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -765,7 +792,6 @@ require('lazy').setup({
       },
     },
   },
-
   { -- Autocompletion
     'hrsh7th/nvim-cmp',
     event = 'InsertEnter',
@@ -952,7 +978,26 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'vue',
+        'typescript',
+        'javascript',
+        'c_sharp',
+        'dart',
+        'kotlin',
+        'swift',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -971,6 +1016,149 @@ require('lazy').setup({
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
+  {
+    'rbong/vim-flog',
+    lazy = true,
+    cmd = { 'Flog', 'Flogsplit', 'Floggit' },
+    dependencies = {
+      'tpope/vim-fugitive',
+    },
+  },
+  {
+    'github/copilot.vim',
+  },
+  {
+    'sindrets/diffview.nvim',
+  },
+  { 'kristijanhusak/vim-dadbod-completion' },
+  {
+    'kristijanhusak/vim-dadbod-ui',
+    dependencies = {
+      { 'tpope/vim-dadbod', lazy = true },
+      { 'kristijanhusak/vim-dadbod-completion', ft = { 'sql', 'mysql', 'plsql' }, lazy = true }, -- Optional
+    },
+    cmd = {
+      'DBUI',
+      'DBUIToggle',
+      'DBUIAddConnection',
+      'DBUIFindBuffer',
+    },
+    init = function()
+      -- Your DBUI configuration
+      vim.g.db_ui_use_nerd_fonts = 1
+    end,
+  },
+  {
+    'stevearc/oil.nvim',
+    ---@module 'oil'
+    ---@type oil.SetupOpts
+    opts = {
+      delte_to_trash = true,
+      view_options = {
+        show_hidden = true,
+      },
+    },
+    -- Optional dependencies
+    dependencies = { { 'echasnovski/mini.icons', opts = {} } },
+    -- dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if you prefer nvim-web-devicons
+    -- Lazy loading is not recommended because it is very tricky to make it work correctly in all situations.
+    lazy = false,
+  },
+  {
+    'akinsho/flutter-tools.nvim',
+    lazy = false,
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'stevearc/dressing.nvim', -- optional for vim.ui.select
+    },
+    config = function()
+      local flutterConfig = require 'flutter-tools'
+
+      flutterConfig.setup {
+        ui = {
+          border = 'rounded',
+          notification_style = 'native',
+        },
+        decorations = {
+          statusline = {
+            -- set to true to be able use the 'flutter_tools_decorations.app_version' in your statusline
+            -- this will show the current version of the flutter app from the pubspec.yaml file
+            app_version = true,
+            -- set to true to be able use the 'flutter_tools_decorations.device' in your statusline
+            -- this will show the currently running device if an application was started with a specific
+            -- device
+            device = true,
+            -- set to true to be able use the 'flutter_tools_decorations.project_config' in your statusline
+            -- this will show the currently selected project configuration
+            project_config = true,
+          },
+        },
+        debugger = { -- integrate with nvim dap + install dart code debugger
+          enabled = false,
+          run_via_dap = false, -- use dap instead of a plenary job to run flutter apps
+          -- if empty dap will not stop on any exceptions, otherwise it will stop on those specified
+          -- see |:help dap.set_exception_breakpoints()| for more info
+          exception_breakpoints = {},
+        },
+        root_patterns = { '.git', 'pubspec.yaml' }, -- patterns to find the root of your flutter project
+        fvm = true, -- takes priority over path, uses <workspace>/.fvm/flutter_sdk if enabled
+        widget_guides = {
+          enabled = false,
+        },
+        closing_tags = {
+          highlight = 'Comment', -- highlight for the closing tag
+          prefix = '//', -- character to use for close tag e.g. > Widget
+          enabled = true, -- set to false to disable
+        },
+        dev_log = {
+          enabled = true,
+          notify_errors = false, -- if there is an error whilst running then notify the user
+          open_cmd = 'tabedit', -- command to us
+        },
+        dev_tools = {
+          autostart = false, -- autostart devtools server if not detected
+          auto_open_browser = false, -- Automatically opens devtools in the browser
+        },
+        outline = {
+          open_cmd = '30vnew', -- command to use to open the outline buffer
+          auto_open = false, -- if true this will open the outline automatically when it is first populated
+        },
+        lsp = {
+          color = { -- show the derived colours for dart variables
+            enabled = false, -- whether or not to highlight color variables at all, only supported on flutter >= 2.10
+            background = false, -- highlight the background
+            background_color = nil, -- required, when background is transparent (i.e. background_color = { r = 19, g = 17, b = 24},)
+            foreground = false, -- highlight the foreground
+            virtual_text = true, -- show the highlight using virtual text
+            virtual_text_str = '■', -- the virtual text character to highlight
+          },
+          --- OR you can specify a function to deactivate or change or control how the config is created
+          capabilities = function(config)
+            config.specificThingIDontWant = false
+            return config
+          end,
+          analysisExcludedFolders = { './fvm/' },
+          -- see the link below for details on each option:
+          -- https://github.com/dart-lang/sdk/blob/master/pkg/analysis_server/tool/lsp_spec/README.md#client-workspace-configuration
+          settings = {
+            showTodos = true,
+            completeFunctionCalls = true,
+            renameFilesWithClasses = 'prompt', -- "always"
+            -- enableSnippets = true,
+            updateImportsOnRename = true, -- Whether to update imports and other directives when files are renamed. Required for `FlutterRename` command.
+          },
+        },
+      }
+      -- [[ Configure Flutter tools]]
+      vim.keymap.set('n', '<leader>r', require('telescope').extensions.flutter.commands, { desc = 'Open command Flutter' })
+      vim.keymap.set('n', '<leader>br', function()
+        vim.cmd '20new'
+        vim.cmd 'te fvm flutter packages pub run build_runner build --delete-conflicting-outputs'
+        vim.cmd '2sleep | normal G'
+      end)
+      -- '<Cmd>20new | te fvm flutter pub get && fvm flutter packages pub run build_runner build --delete-conflicting-outputs<CR> | $')
+    end,
+  },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
@@ -981,10 +1169,10 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
+  require 'kickstart.plugins.debug',
+  require 'kickstart.plugins.indent_line',
+  require 'kickstart.plugins.lint',
+  require 'kickstart.plugins.autopairs',
   -- require 'kickstart.plugins.neo-tree',
   -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
 
