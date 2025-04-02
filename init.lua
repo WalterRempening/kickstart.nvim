@@ -687,7 +687,7 @@ require('lazy').setup({
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       local lspconfig = require 'lspconfig'
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
-
+      capabilities.textDocument.completion.completionItem.snippetSupport = true
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
       --
@@ -712,6 +712,78 @@ require('lazy').setup({
         --
         kotlin_language_server = {
           filetypes = { 'kotlin', 'kt', 'kts' },
+        },
+
+        -- This is an interesting one, for some reason these two LSPs need to be
+        -- activated separately outside of the above loop. If someone can tell me why,
+        -- send me a note...
+        cssls = {
+          capabilities = capabilities,
+        },
+        html = {
+          capabilities = capabilities,
+        },
+        -- Typescript with Vue Support
+        -- location MUST be defined. If the plugin is installed in node_modules, location can have any value.
+        ts_ls = {
+          capabilities = capabilities,
+          init_options = {
+            preferences = {
+              includeInlayParameterNameHints = 'all',
+              includeInlayParameterNameHintsWhenArgumentMatchesName = true,
+              includeInlayFunctionParameterTypeHints = true,
+              includeInlayVariableTypeHints = true,
+              includeInlayPropertyDeclarationTypeHints = true,
+              includeInlayFunctionLikeReturnTypeHints = true,
+              includeInlayEnumMemberValueHints = true,
+              importModuleSpecifierPreference = 'non-relative',
+            },
+            plugins = {
+              {
+                name = '@vue/typescript-plugin',
+                location = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server',
+                languages = { 'vue' },
+              },
+            },
+          },
+          settings = {
+            typescript = {
+              tsserver = {
+                useSyntaxServer = false,
+              },
+            },
+          },
+          filetypes = {
+            'javascript',
+            'typescript',
+            'vue',
+          },
+        },
+        -- Vue LSP
+        volar = {
+          filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue', 'json' },
+          settings = {
+            typescript = {
+              inlayHints = {
+                enumMemberValues = {
+                  enabled = true,
+                },
+                functionLikeReturnTypes = {
+                  enabled = true,
+                },
+                propertyDeclarationTypes = {
+                  enabled = true,
+                },
+                parameterTypes = {
+                  enabled = true,
+                  suppressWhenArgumentMatchesName = true,
+                },
+                variableTypes = {
+                  enabled = true,
+                },
+              },
+            },
+          },
         },
         lua_ls = {
           -- cmd = { ... },
@@ -1121,6 +1193,7 @@ require('lazy').setup({
       require('catppuccin').setup {
         colorscheme = 'catppuccin-macchiato',
         transparency = true,
+        separator = { style = 'round' },
         styles = {
           comments = { 'italic' },
           functions = { 'italic' },
@@ -1149,22 +1222,22 @@ require('lazy').setup({
       -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
+      -- require('mini.surround').setup()
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
       --  and try some other statusline plugin
-      local statusline = require 'mini.statusline'
+      --local statusline = require 'mini.statusline'
       -- set use_icons to true if you have a Nerd Font
-      statusline.setup { use_icons = vim.g.have_nerd_font }
+      --statusline.setup { use_icons = vim.g.have_nerd_font }
 
       -- You can configure sections in the statusline by overriding their
       -- default behavior. For example, here we set the section for
       -- cursor location to LINE:COLUMN
       ---@diagnostic disable-next-line: duplicate-set-field
-      statusline.section_location = function()
-        return '%2l:%-2v'
-      end
+      --statusline.section_location = function()
+      --return '%2l:%-2v'
+      --end
 
       -- ... and there is more!
       --  Check out: https://github.com/echasnovski/mini.nvim
@@ -1223,7 +1296,249 @@ require('lazy').setup({
     },
   },
   {
+    'nvim-lualine/lualine.nvim',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    config = function()
+      require('lualine').setup {
+        options = {
+          icons_enabled = true,
+          theme = 'auto',
+          section_separators = { left = '', right = '' },
+          component_separators = { left = '', right = '' },
+          disabled_filetypes = {
+            statusline = {},
+            winbar = {},
+          },
+          ignore_focus = {},
+          always_divide_middle = true,
+          always_show_tabline = true,
+          globalstatus = false,
+          refresh = {
+            statusline = 100,
+            tabline = 100,
+            winbar = 100,
+          },
+        },
+        sections = {
+          lualine_a = { 'mode' },
+          lualine_b = { 'branch', 'diff', 'diagnostics' },
+          lualine_c = { 'filename' },
+          lualine_x = { 'encoding', 'fileformat', 'filetype' },
+          lualine_y = { 'progress' },
+          lualine_z = { 'location' },
+        },
+        inactive_sections = {
+          lualine_a = {},
+          lualine_b = {},
+          lualine_c = { 'filename' },
+          lualine_x = { 'location' },
+          lualine_y = {},
+          lualine_z = {},
+        },
+        tabline = {},
+        winbar = {},
+        inactive_winbar = {},
+        extensions = {},
+      }
+    end,
+  },
+  {
     'github/copilot.vim',
+  },
+  {
+    'MeanderingProgrammer/render-markdown.nvim',
+    optional = true,
+    opts = {
+      file_types = { 'markdown', 'copilot-chat' },
+    },
+    ft = { 'markdown', 'copilot-chat' },
+  },
+  {
+    'CopilotC-Nvim/CopilotChat.nvim',
+    branch = 'main',
+    -- version = "v3.3.0", -- Use a specific version to prevent breaking changes
+    dependencies = {
+      { 'nvim-telescope/telescope.nvim' }, -- Use telescope for help actions
+      { 'nvim-lua/plenary.nvim' },
+    },
+    opts = {
+      question_header = '## User ',
+      answer_header = '## Copilot ',
+      error_header = '## Error ',
+      prompts = {
+        -- Code related prompts
+        Explain = 'Please explain how the following code works.',
+        Review = 'Please review the following code and provide suggestions for improvement.',
+        Tests = 'Please explain how the selected code works, then generate unit tests for it.',
+        Refactor = 'Please refactor the following code to improve its clarity and readability.',
+        FixCode = 'Please fix the following code to make it work as intended.',
+        FixError = 'Please explain the error in the following text and provide a solution.',
+        BetterNamings = 'Please provide better names for the following variables and functions.',
+        Documentation = 'Please provide documentation for the following code.',
+        SwaggerApiDocs = 'Please provide documentation for the following API using Swagger.',
+        SwaggerJsDocs = 'Please write JSDoc for the following API using Swagger.',
+        -- Text related prompts
+        Summarize = 'Please summarize the following text.',
+        Spelling = 'Please correct any grammar and spelling errors in the following text.',
+        Wording = 'Please improve the grammar and wording of the following text.',
+        Concise = 'Please rewrite the following text to make it more concise.',
+      },
+      -- model = "claude-3.7-sonnet",
+      mappings = {
+        -- Use tab for completion
+        complete = {
+          detail = 'Use @<Tab> or /<Tab> for options.',
+          insert = '<Tab>',
+        },
+        -- Close the chat
+        close = {
+          normal = 'q',
+          insert = '<C-c>',
+        },
+        -- Reset the chat buffer
+        reset = {
+          normal = '<C-x>',
+          insert = '<C-x>',
+        },
+        -- Submit the prompt to Copilot
+        submit_prompt = {
+          normal = '<CR>',
+          insert = '<C-CR>',
+        },
+        -- Accept the diff
+        accept_diff = {
+          normal = '<C-y>',
+          insert = '<C-y>',
+        },
+        -- Show help
+        show_help = {
+          normal = 'g?',
+        },
+      },
+    },
+    config = function(_, opts)
+      local chat = require 'CopilotChat'
+      chat.setup(opts)
+
+      local select = require 'CopilotChat.select'
+      vim.api.nvim_create_user_command('CopilotChatVisual', function(args)
+        chat.ask(args.args, { selection = select.visual })
+      end, { nargs = '*', range = true })
+
+      -- Inline chat with Copilot
+      vim.api.nvim_create_user_command('CopilotChatInline', function(args)
+        chat.ask(args.args, {
+          selection = select.visual,
+          window = {
+            layout = 'float',
+            relative = 'cursor',
+            width = 1,
+            height = 0.4,
+            row = 1,
+          },
+        })
+      end, { nargs = '*', range = true })
+
+      -- Restore CopilotChatBuffer
+      vim.api.nvim_create_user_command('CopilotChatBuffer', function(args)
+        chat.ask(args.args, { selection = select.buffer })
+      end, { nargs = '*', range = true })
+
+      -- Custom buffer for CopilotChat
+      vim.api.nvim_create_autocmd('BufEnter', {
+        pattern = 'copilot-*',
+        callback = function()
+          vim.opt_local.relativenumber = true
+          vim.opt_local.number = true
+
+          -- Get current filetype and set it to markdown if the current filetype is copilot-chat
+          local ft = vim.bo.filetype
+          if ft == 'copilot-chat' then
+            vim.bo.filetype = 'markdown'
+          end
+        end,
+      })
+    end,
+    event = 'VeryLazy',
+    keys = {
+      -- Show prompts actions with telescope
+      {
+        '<leader>ap',
+        function()
+          require('CopilotChat').select_prompt {
+            context = {
+              'buffers',
+            },
+          }
+        end,
+        desc = 'CopilotChat - Prompt actions',
+      },
+      {
+        '<leader>ap',
+        function()
+          require('CopilotChat').select_prompt()
+        end,
+        mode = 'x',
+        desc = 'CopilotChat - Prompt actions',
+      },
+      -- Code related commands
+      { '<leader>ae', '<cmd>CopilotChatExplain<cr>', desc = 'CopilotChat - Explain code' },
+      { '<leader>at', '<cmd>CopilotChatTests<cr>', desc = 'CopilotChat - Generate tests' },
+      { '<leader>ar', '<cmd>CopilotChatReview<cr>', desc = 'CopilotChat - Review code' },
+      { '<leader>aR', '<cmd>CopilotChatRefactor<cr>', desc = 'CopilotChat - Refactor code' },
+      { '<leader>an', '<cmd>CopilotChatBetterNamings<cr>', desc = 'CopilotChat - Better Naming' },
+      -- Chat with Copilot in visual mode
+      {
+        '<leader>av',
+        ':CopilotChatVisual',
+        mode = 'x',
+        desc = 'CopilotChat - Open in vertical split',
+      },
+      {
+        '<leader>ax',
+        ':CopilotChatInline',
+        mode = 'x',
+        desc = 'CopilotChat - Inline chat',
+      },
+      -- Custom input for CopilotChat
+      {
+        '<leader>ai',
+        function()
+          local input = vim.fn.input 'Ask Copilot: '
+          if input ~= '' then
+            vim.cmd('CopilotChat ' .. input)
+          end
+        end,
+        desc = 'CopilotChat - Ask input',
+      },
+      -- Generate commit message based on the git diff
+      {
+        '<leader>am',
+        '<cmd>CopilotChatCommit<cr>',
+        desc = 'CopilotChat - Generate commit message for all changes',
+      },
+      -- Quick chat with Copilot
+      {
+        '<leader>aq',
+        function()
+          local input = vim.fn.input 'Quick Chat: '
+          if input ~= '' then
+            vim.cmd('CopilotChatBuffer ' .. input)
+          end
+        end,
+        desc = 'CopilotChat - Quick chat',
+      },
+      -- Fix the issue with diagnostic
+      { '<leader>af', '<cmd>CopilotChatFixError<cr>', desc = 'CopilotChat - Fix Diagnostic' },
+      -- Clear buffer and chat history
+      { '<leader>al', '<cmd>CopilotChatReset<cr>', desc = 'CopilotChat - Clear buffer and chat history' },
+      -- Toggle Copilot Chat Vsplit
+      { '<leader>av', '<cmd>CopilotChatToggle<cr>', desc = 'CopilotChat - Toggle' },
+      -- Copilot Chat Models
+      { '<leader>a?', '<cmd>CopilotChatModels<cr>', desc = 'CopilotChat - Select Models' },
+      -- Copilot Chat Agents
+      { '<leader>aa', '<cmd>CopilotChatAgents<cr>', desc = 'CopilotChat - Select Agents' },
+    },
   },
   {
     'sindrets/diffview.nvim',
